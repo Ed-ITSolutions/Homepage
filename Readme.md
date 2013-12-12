@@ -15,7 +15,7 @@ Just place all the files into the same folder on a web server and then open up c
 
 ## Installing on IIS
 
-This works no problem on IIS you just need to install PHP which can be done through the Microsoft Web Platform installer (See [http://php.iis.net/])
+This works no problem on IIS you just need to install PHP which can be done through the Microsoft Web Platform installer (See http://php.iis.net/)
 
 Once PHP is installed just point your browser at your install location and your done!
 
