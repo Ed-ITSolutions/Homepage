@@ -108,7 +108,3 @@ $fsockresponses = parse_ini_file("fsockresp.ini", true);
     </div>
   </div>
 </body>
-
-<?php
-  
-?>
