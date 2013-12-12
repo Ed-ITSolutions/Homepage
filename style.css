@@ -93,6 +93,7 @@ input[type=submit]{
   text-align: center;
   -webkit-appearance: push-button;
   white-space: pre;
+  background-image:none;
   
   position:relative;
   top:-50px;
