@@ -1,5 +1,63 @@
 <?php
 $config = parse_ini_file("config.ini", true);
+$fsockresponses = parse_ini_file("fsockresp.ini", true);
+  
+  function write_php_ini($array, $file)
+  {
+      $res = array();
+      foreach($array as $key => $val)
+      {
+          if(is_array($val))
+          {
+              $res[] = "[$key]";
+              foreach($val as $skey => $sval) $res[] = "$skey = ".(is_numeric($sval) ? $sval : '"'.$sval.'"');
+          }
+          else $res[] = "$key = ".(is_numeric($val) ? $val : '"'.$val.'"');
+      }
+      safefilerewrite($file, implode("\r\n", $res));
+  }
+  
+  function safefilerewrite($fileName, $dataToSave)
+  {    if ($fp = fopen($fileName, 'w'))
+      {
+          $startTime = microtime();
+          do
+          {            $canWrite = flock($fp, LOCK_EX);
+             // If lock not obtained sleep for 0 - 100 milliseconds, to avoid collision and CPU load
+             if(!$canWrite) usleep(round(rand(0, 100)*1000));
+          } while ((!$canWrite)and((microtime()-$startTime) < 1000));
+
+          //file was locked so now we can store information
+          if ($canWrite)
+          {            fwrite($fp, $dataToSave);
+              flock($fp, LOCK_UN);
+          }
+          fclose($fp);
+      }
+
+  }
+  
+  if($fsockresponses['main']['last_cache'] <= (time() - $config['main']['cache_delay'])){
+    $fsockresponses['main']['last_cache'] = time();
+    foreach($config['printers'] as $key => $printer){
+      if(@fsockopen($printer['ip'], $printer['port'], $errno, $errstr, 1)){
+        $fsockresponses['printers'][$key] = "<span class='on'>" . $config['main']['on_text'] . "</span>";
+      }else{
+        $fsockresponses['printers'][$key] = "<span class='off'>" . $config['main']['off_text'] . "</span>";
+      }
+    }
+    
+    foreach($config['servers'] as $key => $server){
+      if(@fsockopen($server['ip'], $server['port'], $errno, $errstr, 1)){
+        $fsockresponses['servers'][$key] = "<span class='on'>" . $config['main']['on_text'] . "</span>";
+      }else{
+        $fsockresponses['servers'][$key] = "<span class='off'>" . $config['main']['off_text'] . "</span>";
+      }
+    }
+    
+    
+    write_php_ini($fsockresponses, "fsockresp.ini");
+  }
 ?>
 
 <!DOCTYPE html>
@@ -35,32 +93,22 @@ $config = parse_ini_file("config.ini", true);
     <div class="printers">
       <h3>Printers</h3>
       <ul>
-        <?php foreach($config['printers'] as $printer){ ?>
-        <li><?php echo($printer['name']); ?> - <?php
-    $sock = @fsockopen($printer['ip'], $printer['port'], $errno, $errstr, 1);
-    if($sock){
-      echo "<span class=\"on\">" . $config['main']['on_text'] . "</span>";
-    }else{
-      echo "<span class=\"off\">" . $config['main']['off_text'] . "</span>";
-    }
-    ?></li>
+        <?php foreach($config['printers'] as $key => $printer){ ?>
+        <li><?php echo($printer['name']); ?> - <?php echo($fsockresponses['printers'][$key]); ?></li>
       <?php } ?>
       </ul>
     </div>
     <div class="printers">
       <h3>Servers</h3>
       <ul>
-        <?php foreach($config['servers'] as $server){ ?>
-        <li><?php echo($server['name']); ?> - <?php
-    $sock = @fsockopen($server['ip'], $server['port'], $errno, $errstr, 1);
-    if($sock){
-      echo "<span class=\"on\">" . $config['main']['on_text'] . "</span>";
-    }else{
-      echo "<span class=\"off\">" . $config['main']['off_text'] . "</span>";
-    }
-    ?></li>
+        <?php foreach($config['servers'] as $key => $server){ ?>
+        <li><?php echo($server['name']); ?> - <?php echo($fsockresponses['servers'][$key]); ?></li>
     <?php } ?>
       </ul>
     </div>
   </div>
 </body>
+
+<?php
+  
+?>
